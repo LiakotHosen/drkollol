@@ -1,5 +1,6 @@
 'use client';
 
+import { stableVH, isToolbarOnlyResize } from '@/lib/viewport';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { HeroSection } from '@/types/database';
@@ -63,7 +64,7 @@ export function HeroIncision({ heroData }: HeroIncisionProps) {
     const cx = cv.getContext('2d');
     if (!cx) return;
 
-    let mode: 'wide' | 'tall' = window.innerWidth / window.innerHeight < 0.9 ? 'tall' : 'wide';
+    let mode: 'wide' | 'tall' = window.innerWidth / stableVH() < 0.9 ? 'tall' : 'wide';
     let C = CFG[mode];
     let W = 1600;
     let H = 900;
@@ -82,17 +83,17 @@ export function HeroIncision({ heroData }: HeroIncisionProps) {
       if (!C || !cv || !cx) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       cv.width = window.innerWidth * dpr;
-      cv.height = window.innerHeight * dpr;
+      cv.height = stableVH() * dpr;
       cx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const s = Math.max(window.innerWidth / W, window.innerHeight / H);
+      const s = Math.max(window.innerWidth / W, stableVH() / H);
       const dw = W * s;
       const centre = (window.innerWidth - dw) / 2;
       const safe = 20 - C.path[0][1] * dw;
       view = {
         s,
         ox: clamp(Math.max(centre, Math.min(0, safe)), window.innerWidth - dw, 0),
-        oy: (window.innerHeight - H * s) / 2,
+        oy: (stableVH() - H * s) / 2,
       };
       lastKey = '';
       edgeDone = false;
@@ -300,7 +301,7 @@ export function HeroIncision({ heroData }: HeroIncisionProps) {
     }
 
     async function load() {
-      mode = window.innerWidth / window.innerHeight < 0.9 ? 'tall' : 'wide';
+      mode = window.innerWidth / stableVH() < 0.9 ? 'tall' : 'wide';
       C = CFG[mode];
       const S = SETS[mode];
       const m = mode;
@@ -349,7 +350,7 @@ export function HeroIncision({ heroData }: HeroIncisionProps) {
     function progress() {
       if (!hero) return 0;
       const r = hero.getBoundingClientRect();
-      return clamp(-r.top / (hero.offsetHeight - window.innerHeight), 0, 1);
+      return clamp(-r.top / (hero.offsetHeight - stableVH()), 0, 1);
     }
 
     let animId: number;
@@ -361,22 +362,22 @@ export function HeroIncision({ heroData }: HeroIncisionProps) {
       if (C && cx) {
         const t = timeAt(pS);
         const i = clamp(Math.round(t * fps), 0, C.n - 1);
-        const key = mode + i + '|' + pS.toFixed(4) + '|' + window.innerWidth + 'x' + window.innerHeight + '|' + (isBn ? 'bn' : 'en');
+        const key = mode + i + '|' + pS.toFixed(4) + '|' + window.innerWidth + 'x' + stableVH() + '|' + (isBn ? 'bn' : 'en');
 
         if (key !== lastKey) {
           lastKey = key;
           const bm = frameBitmap(i);
           if (bm) {
             cx.fillStyle = '#F6F6F6';
-            cx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            cx.fillRect(0, 0, window.innerWidth, stableVH());
             cx.drawImage(bm, view.ox, view.oy, W * view.s, H * view.s);
 
             const fadeH = 50;
-            const fadeG = cx.createLinearGradient(0, window.innerHeight - fadeH, 0, window.innerHeight);
+            const fadeG = cx.createLinearGradient(0, stableVH() - fadeH, 0, stableVH());
             fadeG.addColorStop(0, 'rgba(246, 246, 246, 0)');
             fadeG.addColorStop(1, 'rgba(246, 246, 246, 1)');
             cx.fillStyle = fadeG;
-            cx.fillRect(0, window.innerHeight - fadeH, window.innerWidth, fadeH);
+            cx.fillRect(0, stableVH() - fadeH, window.innerWidth, fadeH);
           }
           const tip = drawCut(i / fps);
           placeText();
@@ -403,7 +404,8 @@ export function HeroIncision({ heroData }: HeroIncisionProps) {
     }
 
     const handleResize = () => {
-      const m: 'wide' | 'tall' = window.innerWidth / window.innerHeight < 0.9 ? 'tall' : 'wide';
+      if (isToolbarOnlyResize()) return;
+      const m: 'wide' | 'tall' = window.innerWidth / stableVH() < 0.9 ? 'tall' : 'wide';
       if (m !== mode) {
         load();
       } else {

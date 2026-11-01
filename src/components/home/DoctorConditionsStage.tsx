@@ -1,5 +1,6 @@
 'use client';
 
+import { stableVH, isToolbarOnlyResize } from '@/lib/viewport';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -207,7 +208,7 @@ export function DoctorConditionsStage({
       const sd = sideOf(i);
       if (!sd) return { x: 0, s: 1, y: 0 };
       const H = docImg.offsetHeight || 720;
-      const vh = window.innerHeight;
+      const vh = stableVH();
       const S = Math.max(1.6, (0.76 * vh) / (0.42 * H));
       const top0 = vh - H;
       return { x: sd * window.innerWidth * 0.27, s: S, y: vh * 0.24 - (top0 + 0.015 * H * S) };
@@ -218,7 +219,7 @@ export function DoctorConditionsStage({
       const words = Array.from(wordsContainerRef.current.children) as HTMLElement[];
       const mob = window.innerWidth < 860;
       const vw = window.innerWidth;
-      const vh = window.innerHeight;
+      const vh = stableVH();
 
       words.forEach((w, i) => {
         w.style.removeProperty('--fs');
@@ -251,7 +252,7 @@ export function DoctorConditionsStage({
 
     const onDraw = () => {
       const r = stage.getBoundingClientRect();
-      const vh = window.innerHeight;
+      const vh = stableVH();
       const vw = window.innerWidth;
       // Scroll progress across the whole doctor section
       const q = clamp(-r.top / (stage.offsetHeight - 2 * vh), 0, 1);
@@ -367,6 +368,7 @@ export function DoctorConditionsStage({
     };
 
     const onResize = () => {
+      if (isToolbarOnlyResize()) return;
       fitWords();
       onDraw();
     };

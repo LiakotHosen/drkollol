@@ -400,3 +400,8 @@ Order: hero → Meet Your Surgeon/conditions (pinned stage) → **How to get a s
 - References switched in: VisitChambersSection, AboutPageClient, CategoryPageClient, ConditionPageClient, VideosSection, GalleryPageClient, video-utils (fallback thumbnail), PinnedShowcase.
 - `AdminGallery.tsx` intentionally untouched (admin panel off-limits). Old `doctor-cta.webp` / `doctor-gloves.webp` are kept in public/img.
 - `doctor-v3.webp` (Meet Your Surgeon, chat widget, OG) is unchanged.
+
+## 2026-11-01 — Mobile scroll jump fix
+- iOS Safari / Android Chrome toolbar show/hide changes `window.innerHeight` and fires `resize`, while pinned stages use CSS `100svh`, so scroll-driven animations jumped on phones.
+- Added `src/lib/viewport.ts`: `stableVH()` (100svh in px, re-measured only on width change) and `isToolbarOnlyResize()`.
+- Replaced `window.innerHeight` with `stableVH()` in HeroIncision, DoctorConditionsStage, SerialStepsSection, PinnedShowcase, CategoryPageClient, ConditionPageClient; resize handlers ignore toolbar-only resizes on touch devices.

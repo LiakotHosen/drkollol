@@ -1,5 +1,6 @@
 'use client';
 
+import { stableVH, isToolbarOnlyResize } from '@/lib/viewport';
 import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
@@ -243,7 +244,7 @@ export function SerialStepsSection({ steps, profile, onBookClick }: SerialStepsS
     let hsLast = '';
 
     const hsDraw = () => {
-      const vh = window.innerHeight;
+      const vh = stableVH();
       const r = serialEl.getBoundingClientRect();
       const cover = clamp(1 - r.top / vh, 0, 1);
       const mob = window.innerWidth < 860;

@@ -1,5 +1,6 @@
 'use client';
 
+import { stableVH, isToolbarOnlyResize } from '@/lib/viewport';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
@@ -261,7 +262,7 @@ export function ConditionPageClient({
 
     let animId: number;
     const drawStack = () => {
-      const H = window.innerHeight;
+      const H = stableVH();
       stackEls.forEach((el, i) => {
         const nx = stackEls[i + 1];
         if (!nx) {

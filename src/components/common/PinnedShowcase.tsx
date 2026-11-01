@@ -1,5 +1,6 @@
 'use client';
 
+import { stableVH, isToolbarOnlyResize } from '@/lib/viewport';
 import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
@@ -67,13 +68,13 @@ export function PinnedShowcase({
 
     const onScroll = () => {
       const r = el.getBoundingClientRect();
-      const q = Math.min(1, Math.max(0, -r.top / (el.offsetHeight - window.innerHeight)));
+      const q = Math.min(1, Math.max(0, -r.top / (el.offsetHeight - stableVH())));
       pS += (q - pS) * 0.16;
       if (Math.abs(q - pS) < 0.0003) pS = q;
 
       const pos = rest(pS * (n - 1));
       const mob = window.innerWidth < 860;
-      const step = window.innerHeight * (mob ? 0.36 : 0.6);
+      const step = stableVH() * (mob ? 0.36 : 0.6);
       const cur = Math.round(pos);
 
       // 1. Words motion
@@ -189,7 +190,7 @@ export function PinnedShowcase({
           const base = parseFloat(getComputedStyle(w).fontSize);
           const card = panes[i]?.querySelector<HTMLElement>('.sp-card');
           const target = mob ? document.documentElement.clientWidth * 0.92 : (card ? card.offsetWidth : 400);
-          const cap = mob ? 96 : window.innerHeight * (i ? 0.26 : 0.32);
+          const cap = mob ? 96 : stableVH() * (i ? 0.26 : 0.32);
           let fs = Math.min(cap, (base * target * 0.965) / (w.scrollWidth || 1));
           w.style.setProperty('--fs', `${fs}px`);
           fs = Math.min(cap, (fs * target * 0.965) / (w.scrollWidth || 1));
@@ -216,6 +217,7 @@ export function PinnedShowcase({
     }
 
     const onResize = () => {
+      if (isToolbarOnlyResize()) return;
       fitShow();
       onScroll();
     };
