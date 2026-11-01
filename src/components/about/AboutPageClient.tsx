@@ -411,7 +411,7 @@ export function AboutPageClient({
 
           <div className="v-doc">
             <Image
-              src="/img/doctor-cta.webp"
+              src="/img/doctor-cta-v3.webp"
               alt="Dr. Fahim Foysal Kollol"
               width={649}
               height={1081}

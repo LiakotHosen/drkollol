@@ -323,7 +323,7 @@ export function ConditionPageClient({
         <div className="cta-stick">
           <img
             className="cta-doc"
-            src="/img/doctor-cta.webp"
+            src="/img/doctor-cta-v3.webp"
             alt="Dr. Fahim Foysal Kollol"
             width={649}
             height={1081}

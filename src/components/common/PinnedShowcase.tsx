@@ -254,7 +254,7 @@ export function PinnedShowcase({
         {mode !== 'hero' && (
           <div ref={docImgRef} className="show-doc">
             <img
-              src="/img/doctor-gloves.webp"
+              src="/img/doctor-gloves-v3.webp"
               alt="Dr. Fahim Foysal Kollol"
               width={655}
               height={1069}

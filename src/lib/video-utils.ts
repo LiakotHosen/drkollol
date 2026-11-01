@@ -54,7 +54,7 @@ export function parseVideoUrl(url: string): ParsedVideo {
       platform: 'facebook',
       embedUrl: fbEmbed,
       // Generic medical/clinical video thumbnail for Facebook when no custom image is supplied
-      thumbnailUrl: '/img/doctor-cta.webp',
+      thumbnailUrl: '/img/doctor-cta-v3.webp',
       isValid: true,
     };
   }
@@ -63,7 +63,7 @@ export function parseVideoUrl(url: string): ParsedVideo {
   return {
     platform: 'other',
     embedUrl: trimmed,
-    thumbnailUrl: '/img/doctor-cta.webp',
+    thumbnailUrl: '/img/doctor-cta-v3.webp',
     isValid: Boolean(trimmed),
   };
 }

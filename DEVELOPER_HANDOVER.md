@@ -394,3 +394,9 @@ Order: hero → Meet Your Surgeon/conditions (pinned stage) → **How to get a s
     - High-resolution video modal player with responsive YouTube embed, internal Prev/Next video navigation, and bilingual clinical descriptions.
 
 
+
+## 2026-11-01 — Doctor photo swap (design only)
+- New bg-removed photos: `public/img/doctor-cta-v3.webp` (649×1081, arms crossed) and `public/img/doctor-gloves-v3.webp` (655×1069, gloves). Same canvas size and head position as the old files, so layout is unchanged.
+- References switched in: VisitChambersSection, AboutPageClient, CategoryPageClient, ConditionPageClient, VideosSection, GalleryPageClient, video-utils (fallback thumbnail), PinnedShowcase.
+- `AdminGallery.tsx` intentionally untouched (admin panel off-limits). Old `doctor-cta.webp` / `doctor-gloves.webp` are kept in public/img.
+- `doctor-v3.webp` (Meet Your Surgeon, chat widget, OG) is unchanged.

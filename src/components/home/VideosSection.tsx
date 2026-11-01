@@ -290,7 +290,7 @@ export function VideosSection({ videos = DEFAULT_GALLERY_VIDEOS }: VideosSection
           {infiniteVideos.map((item, idx) => {
             const originalIndex = idx % baseVideos.length;
             const parsed = parseVideoUrl(item.video_url);
-            const thumb = item.thumbnail_url || parsed.thumbnailUrl || '/img/doctor-cta.webp';
+            const thumb = item.thumbnail_url || parsed.thumbnailUrl || '/img/doctor-cta-v3.webp';
             const catKey = (item.category || '').toLowerCase();
             const categoryObj = VIDEO_CATEGORY_NAMES[catKey] || {
               en: item.category || 'Clinical Guidance',

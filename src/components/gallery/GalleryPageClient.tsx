@@ -395,7 +395,7 @@ export function GalleryPageClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
               {paginatedVideos.map((video) => {
                 const parsed = parseVideoUrl(video.video_url);
-                const thumb = video.thumbnail_url || parsed.thumbnailUrl || '/img/doctor-cta.webp';
+                const thumb = video.thumbnail_url || parsed.thumbnailUrl || '/img/doctor-cta-v3.webp';
 
                 return (
                   <div
