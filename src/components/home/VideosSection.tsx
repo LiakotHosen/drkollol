@@ -17,7 +17,6 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { parseVideoUrl } from '@/lib/video-utils';
 import type { GalleryVideo } from '@/types/database';
-import { DEFAULT_GALLERY_VIDEOS } from '@/lib/content/default-data';
 
 interface VideosSectionProps {
   videos?: GalleryVideo[];
@@ -35,12 +34,12 @@ function toBanglaDigits(num: number | string): string {
   return String(num).replace(/\d/g, (d) => bnDigits[parseInt(d, 10)]);
 }
 
-export function VideosSection({ videos = DEFAULT_GALLERY_VIDEOS }: VideosSectionProps) {
+export function VideosSection({ videos = [] }: VideosSectionProps) {
   const { lang, isBn } = useLanguage();
 
-  // Ensure we have a valid, sorted list of videos
+  // Ensure we have a valid, sorted list of dynamic videos from database only
   const baseVideos: GalleryVideo[] = useMemo(() => {
-    const list = videos && videos.length > 0 ? videos : DEFAULT_GALLERY_VIDEOS;
+    const list = (videos || []).filter((v) => Boolean(v && v.video_url));
     return [...list].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
   }, [videos]);
 
@@ -239,6 +238,11 @@ export function VideosSection({ videos = DEFAULT_GALLERY_VIDEOS }: VideosSection
   }, [activeVideoIndex, baseVideos.length]);
 
   const activeVideo = activeVideoIndex !== null ? baseVideos[activeVideoIndex] : null;
+
+  // Fully dynamic: if no videos are configured from the admin panel, do not render the section
+  if (baseVideos.length === 0) {
+    return null;
+  }
 
   return (
     <section
@@ -505,13 +509,26 @@ export function VideosSection({ videos = DEFAULT_GALLERY_VIDEOS }: VideosSection
             <div className="relative aspect-video w-full bg-black flex items-center justify-center">
               {(() => {
                 const parsed = parseVideoUrl(activeVideo.video_url);
+                if (!parsed.isValid || !parsed.embedUrl) {
+                  return (
+                    <div className="w-full h-full flex items-center justify-center text-white/70 p-6 text-center">
+                      <p className="text-sm">Video cannot be embedded or link is invalid.</p>
+                    </div>
+                  );
+                }
+                const embedWithAutoplay = parsed.embedUrl.includes('?')
+                  ? `${parsed.embedUrl}&autoplay=1`
+                  : `${parsed.embedUrl}?autoplay=1`;
                 return (
                   <iframe
-                    src={`${parsed.embedUrl}?autoplay=1`}
+                    src={embedWithAutoplay}
                     title={isBn ? activeVideo.title_bn : activeVideo.title_en}
                     className="w-full h-full border-none"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                   />
                 );
               })()}

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileStickyBar } from '@/components/MobileStickyBar';
@@ -139,6 +140,17 @@ export function BlogsHubClient({
                     href={`/blogs/${b.slug}`}
                     className="group rounded-3xl overflow-hidden bg-white border border-[rgba(43,179,177,0.25)] shadow-[0_16px_36px_-24px_rgba(6,47,49,0.3)] hover:shadow-xl hover:border-[var(--teal)] transition-all duration-300 flex flex-col justify-between"
                   >
+                    {b.cover_image && (
+                      <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100 border-b border-[rgba(43,179,177,0.15)]">
+                        <Image
+                          src={b.cover_image}
+                          alt={isBn ? b.title_bn : b.title_en}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                        />
+                      </div>
+                    )}
                     <div className="p-6 pb-2">
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--teal)] bg-[var(--tint)] px-3 py-1 rounded-full border border-[rgba(43,179,177,0.25)]">

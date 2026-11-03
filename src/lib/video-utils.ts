@@ -9,10 +9,11 @@ export interface ParsedVideo {
 /**
  * Parses YouTube and Facebook video links (standard, unlisted, shorts, reels, share links).
  * Extracts video ID and generates compliant embed URLs and high-resolution thumbnails.
+ * Enforces strict HTTPS and prevents script or protocol injection.
  */
 export function parseVideoUrl(url: string): ParsedVideo {
   const trimmed = (url || '').trim();
-  if (!trimmed) {
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
     return {
       platform: 'other',
       embedUrl: '',
@@ -29,15 +30,17 @@ export function parseVideoUrl(url: string): ParsedVideo {
   // - https://www.youtube.com/shorts/XXXXXXXXXXX
   // - https://www.youtube.com/embed/XXXXXXXXXXX
   const ytMatch = trimmed.match(
-    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?\/\s]{11})/i
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([\w-]{11})/i
   );
 
   if (ytMatch && ytMatch[1]) {
-    const videoId = ytMatch[1];
+    const rawId = ytMatch[1];
+    // Clean and strictly alphanumeric/dash/underscore
+    const videoId = encodeURIComponent(rawId);
     return {
       platform: 'youtube',
       videoId,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`,
       thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
       isValid: true,
     };
@@ -45,11 +48,11 @@ export function parseVideoUrl(url: string): ParsedVideo {
 
   // 2. Facebook Detection
   // Matches facebook.com/... or fb.watch/...
-  const isFb = /facebook\.com|fb\.watch/i.test(trimmed);
+  const isFb = /^https:\/\/(?:[a-zA-Z0-9-]+\.)?(?:facebook\.com|fb\.watch)\/.+/i.test(trimmed);
   if (isFb) {
     const fbEmbed = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
       trimmed
-    )}&show_text=0&autoplay=1`;
+    )}&show_text=0`;
     return {
       platform: 'facebook',
       embedUrl: fbEmbed,
@@ -59,11 +62,11 @@ export function parseVideoUrl(url: string): ParsedVideo {
     };
   }
 
-  // 3. Fallback for other video providers
+  // 3. Fallback for unsupported or unverified URLs - marked invalid for security
   return {
     platform: 'other',
-    embedUrl: trimmed,
+    embedUrl: '',
     thumbnailUrl: '/img/doctor-cta-v3.webp',
-    isValid: Boolean(trimmed),
+    isValid: false,
   };
 }

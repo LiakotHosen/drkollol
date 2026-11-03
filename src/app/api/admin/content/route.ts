@@ -162,7 +162,8 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ success: true, message: `${section} updated and synchronized successfully.` });
   } catch (error) {
     console.error('Admin content update error:', error);
-    return NextResponse.json({ success: false, message: 'Failed to update content.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to update content.';
+    return NextResponse.json({ success: false, message }, { status: 400 });
   }
 }
 
@@ -213,7 +214,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true, message: `${section} removed successfully.` });
   } catch (error) {
     console.error('Admin content delete error:', error);
-    return NextResponse.json({ success: false, message: 'Failed to delete content.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to delete content.';
+    return NextResponse.json({ success: false, message }, { status: 400 });
   }
 }
 

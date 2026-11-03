@@ -30,6 +30,8 @@ import {
   ChatbotConfig,
 } from '@/types/database';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { sanitizeHtml } from '@/lib/sanitize-html';
+import { galleryVideoSchema } from '@/lib/validations/gallery-video';
 
 // In-memory runtime store for development & mock fallback
 let memSiteSettings: SiteSettings = { ...DEFAULT_SITE_SETTINGS };
@@ -44,7 +46,7 @@ let memFaqs: FAQ[] = [...DEFAULT_FAQS];
 let memBlogs: BlogPost[] = [...DEFAULT_BLOGS];
 let memAppointments: Appointment[] = [];
 let memGalleryPhotos: GalleryPhoto[] = [...DEFAULT_GALLERY_PHOTOS];
-let memGalleryVideos: GalleryVideo[] = [...DEFAULT_GALLERY_VIDEOS];
+let memGalleryVideos: GalleryVideo[] = [];
 let memChatbotConfig: ChatbotConfig = { ...DEFAULT_CHATBOT_CONFIG };
 
 
@@ -469,22 +471,29 @@ export async function getBlogBySlug(slug: string): Promise<BlogPost | null> {
 }
 
 export async function saveBlog(blog: BlogPost): Promise<BlogPost> {
-  const idx = memBlogs.findIndex((b) => b.slug === blog.slug);
+  const sanitizedBlog: BlogPost = {
+    ...blog,
+    content_en: sanitizeHtml(blog.content_en || ''),
+    content_bn: sanitizeHtml(blog.content_bn || ''),
+    cover_image: (blog.cover_image || '').trim(),
+  };
+
+  const idx = memBlogs.findIndex((b) => b.slug === sanitizedBlog.slug);
   if (idx >= 0) {
-    memBlogs[idx] = { ...memBlogs[idx], ...blog };
+    memBlogs[idx] = { ...memBlogs[idx], ...sanitizedBlog };
   } else {
-    memBlogs.push(blog);
+    memBlogs.push(sanitizedBlog);
   }
   const supabase = await createServerSupabaseClient();
   if (supabase) {
     try {
-      const { error } = await supabase.from('blogs').upsert(blog);
+      const { error } = await supabase.from('blogs').upsert(sanitizedBlog);
       if (error) console.error('Supabase saveBlog error:', error);
     } catch (e) {
       console.error('Supabase saveBlog exception:', e);
     }
   }
-  return blog;
+  return sanitizedBlog;
 }
 
 export async function deleteBlog(slug: string): Promise<boolean> {
@@ -682,17 +691,8 @@ export async function getGalleryVideos(): Promise<GalleryVideo[]> {
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: false });
       if (!error && data) {
-        if (data.length > 0) {
-          memGalleryVideos = data as GalleryVideo[];
-          return memGalleryVideos;
-        } else {
-          // Auto-seed initial default videos if table is empty
-          const { error: seedErr } = await supabase.from('gallery_videos').upsert(DEFAULT_GALLERY_VIDEOS);
-          if (!seedErr) {
-            memGalleryVideos = [...DEFAULT_GALLERY_VIDEOS];
-            return memGalleryVideos;
-          }
-        }
+        memGalleryVideos = data as GalleryVideo[];
+        return memGalleryVideos;
       }
     } catch (e) {
       console.warn('Falling back to mem gallery videos:', e);
@@ -702,10 +702,16 @@ export async function getGalleryVideos(): Promise<GalleryVideo[]> {
 }
 
 export async function saveGalleryVideo(video: GalleryVideo): Promise<GalleryVideo> {
+  const parsed = galleryVideoSchema.safeParse(video);
+  if (!parsed.success) {
+    const errorMsg = parsed.error.issues.map((i) => i.message).join(', ');
+    throw new Error('Validation failed: ' + errorMsg);
+  }
+
+  const validatedData = parsed.data;
   const videoToSave: GalleryVideo = {
-    ...video,
-    id: video.id || 'vid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-    created_at: video.created_at || new Date().toISOString(),
+    ...validatedData,
+    created_at: validatedData.created_at || new Date().toISOString(),
   };
 
   const existingIdx = memGalleryVideos.findIndex((v) => v.id === videoToSave.id);
@@ -733,12 +739,16 @@ export async function saveGalleryVideo(video: GalleryVideo): Promise<GalleryVide
 }
 
 export async function deleteGalleryVideo(id: string): Promise<boolean> {
-  memGalleryVideos = memGalleryVideos.filter((v) => v.id !== id);
+  if (!id || typeof id !== 'string') {
+    throw new Error('Valid video ID is required for deletion.');
+  }
+  const cleanId = id.trim();
+  memGalleryVideos = memGalleryVideos.filter((v) => v.id !== cleanId);
 
   const supabase = await createServerSupabaseClient();
   if (supabase) {
     try {
-      const { error } = await supabase.from('gallery_videos').delete().eq('id', id);
+      const { error } = await supabase.from('gallery_videos').delete().eq('id', cleanId);
       if (error) {
         console.error('Supabase deleteGalleryVideo error:', error);
         throw error;

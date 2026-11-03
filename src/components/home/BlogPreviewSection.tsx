@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useLanguage } from '@/context/LanguageContext';
 import { BlogPost, Category } from '@/types/database';
 
@@ -44,9 +45,18 @@ export function BlogPreviewSection({ blogs, categories }: BlogPreviewSectionProp
             const excerpt = isBn ? b.excerpt_bn : b.excerpt_en;
 
             return (
-              <Link key={b.slug} className="blog glass" href={`/blogs/${b.slug}`}>
-                <div className="ph">
-                  <div>
+              <Link key={b.slug} className="blog glass group" href={`/blogs/${b.slug}`}>
+                <div className="ph relative overflow-hidden">
+                  {b.cover_image && (
+                    <Image
+                      src={b.cover_image}
+                      alt={title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                    />
+                  )}
+                  <div className="relative z-10">
                     <span className="tag-s">{t.tag}</span>
                   </div>
                 </div>

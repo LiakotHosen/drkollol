@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileStickyBar } from '@/components/MobileStickyBar';
@@ -9,6 +10,7 @@ import { AppointmentModal } from '@/components/AppointmentModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { BlogPost, Category, Chamber, Condition, SiteSettings } from '@/types/database';
 import { formatDigits } from '@/lib/format-utils';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 interface SingleBlogClientProps {
   blog: BlogPost;
@@ -67,8 +69,11 @@ export function SingleBlogClient({
     },
   }[lang];
 
-  // Render markdown text lines simply
+  // Content depending on language
   const content = isBn ? blog.content_bn : blog.content_en;
+
+  // Detect whether content is Rich Text HTML or legacy Markdown
+  const isHtml = /<[a-z][\s\S]*>/i.test(content || '');
 
   return (
     <div className="relative min-h-screen bg-white">
@@ -92,6 +97,7 @@ export function SingleBlogClient({
             </Link>
           </div>
 
+          {/* SEO Main Title H1 */}
           <h1 className="font-heading font-extrabold text-3xl sm:text-5xl text-[var(--ink)] leading-tight tracking-tight">
             {isBn ? blog.title_bn : blog.title_en}
           </h1>
@@ -117,139 +123,177 @@ export function SingleBlogClient({
             </div>
           </div>
 
+          {/* Blog Post Cover Photo (Local device upload or URL) */}
+          {blog.cover_image && (
+            <div className="my-8 relative aspect-[16/9] w-full rounded-3xl overflow-hidden border border-[rgba(43,179,177,0.25)] shadow-lg bg-gray-100">
+              <Image
+                src={blog.cover_image}
+                alt={isBn ? blog.title_bn : blog.title_en}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 896px"
+                className="object-cover"
+              />
+            </div>
+          )}
+
           {/* Lead Excerpt */}
           <div className="my-8 p-5 rounded-2xl bg-white border-l-4 border-[var(--teal)] shadow-sm text-sm sm:text-base font-medium text-[var(--ink)] leading-relaxed italic">
             {isBn ? blog.excerpt_bn : blog.excerpt_en}
           </div>
 
-          {/* Body Content */}
-          <div className="prose prose-teal max-w-none text-sm sm:text-base text-[var(--ink)] leading-relaxed flex flex-col gap-5">
-            {content.split('\n\n').map((paragraph, idx) => {
-              const trimmed = paragraph.trim();
-              if (!trimmed) return null;
+          {/* ---------------------------------------------------------------------------------- */}
+          {/* BODY CONTENT (Rich Text HTML or Markdown Fallback) */}
+          {/* ---------------------------------------------------------------------------------- */}
+          {isHtml ? (
+            <div
+              className="prose prose-teal max-w-none text-base sm:text-[17px] text-[#062F31]/90 leading-[1.8] font-serif
+                [&_h1]:font-heading [&_h1]:font-extrabold [&_h1]:text-3xl [&_h1]:text-[#062F31] [&_h1]:mt-8 [&_h1]:mb-3
+                [&_h2]:font-heading [&_h2]:font-extrabold [&_h2]:text-2xl [&_h2]:sm:text-3xl [&_h2]:text-[#062F31] [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:border-l-4 [&_h2]:border-[var(--teal)] [&_h2]:pl-3.5 [&_h2]:leading-snug
+                [&_h3]:font-heading [&_h3]:font-extrabold [&_h3]:text-xl [&_h3]:sm:text-2xl [&_h3]:text-[var(--teal)] [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:border-b [&_h3]:border-[rgba(43,179,177,0.2)] [&_h3]:pb-2 [&_h3]:leading-snug
+                [&_h4]:font-heading [&_h4]:font-bold [&_h4]:text-lg [&_h4]:text-[#062F31] [&_h4]:mt-4 [&_h4]:mb-1
+                [&_p]:my-4 [&_p]:leading-[1.8]
+                [&_blockquote]:my-6 [&_blockquote]:p-4 [&_blockquote]:sm:p-5 [&_blockquote]:rounded-2xl [&_blockquote]:bg-gradient-to-r [&_blockquote]:from-[var(--tint)] [&_blockquote]:to-white [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--aqua)] [&_blockquote]:text-[#062F31] [&_blockquote]:shadow-2xs [&_blockquote]:italic
+                [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-3.5 [&_ul]:space-y-2
+                [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-3.5 [&_ol]:space-y-2
+                [&_li]:leading-relaxed
+                [&_a]:text-[var(--teal)] [&_a]:underline [&_a]:font-semibold [&_a:hover]:text-[var(--ink)]
+                [&_table]:w-full [&_table]:text-xs [&_table]:sm:text-sm [&_table]:border-collapse [&_table]:border [&_table]:border-[rgba(43,179,177,0.3)] [&_table]:rounded-2xl [&_table]:overflow-hidden [&_table]:my-6
+                [&_th]:bg-[var(--tint)] [&_th]:font-bold [&_th]:text-[#062F31] [&_th]:p-3 [&_th]:border-b [&_th]:border-[rgba(43,179,177,0.25)]
+                [&_td]:p-3 [&_td]:border-b [&_td]:border-gray-100
+                [&_img]:rounded-2xl [&_img]:mx-auto [&_img]:shadow-md [&_img]:border [&_img]:border-[rgba(43,179,177,0.2)]
+                [&_figcaption]:text-xs [&_figcaption]:text-center [&_figcaption]:text-gray-500 [&_figcaption]:mt-2"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
+            />
+          ) : (
+            <div className="prose prose-teal max-w-none text-sm sm:text-base text-[var(--ink)] leading-relaxed flex flex-col gap-5 font-serif">
+              {(content || '').split('\n\n').map((paragraph, idx) => {
+                const trimmed = paragraph.trim();
+                if (!trimmed) return null;
 
-              // Helper for bold and italic
-              const renderInline = (str: string) =>
-                str
-                  .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[#062F31]">$1</strong>')
-                  .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
-                  .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-gray-100 text-xs font-mono text-[var(--teal)]">$1</code>');
+                // Helper for bold and italic
+                const renderInline = (str: string) =>
+                  str
+                    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[#062F31]">$1</strong>')
+                    .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
+                    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-gray-100 text-xs font-mono text-[var(--teal)]">$1</code>');
 
-              // Section Heading H2
-              if (trimmed.startsWith('## ')) {
-                return (
-                  <h2
-                    key={idx}
-                    className="font-heading font-extrabold text-2xl sm:text-3xl text-[#062F31] mt-8 mb-2 border-l-4 border-[var(--teal)] pl-3.5 leading-snug"
-                    dangerouslySetInnerHTML={{ __html: renderInline(trimmed.replace('## ', '')) }}
-                  />
-                );
-              }
-
-              // Subsection Heading H3
-              if (trimmed.startsWith('### ')) {
-                return (
-                  <h3
-                    key={idx}
-                    className="font-heading font-extrabold text-xl sm:text-2xl text-[var(--teal)] mt-6 mb-1 border-b border-[rgba(43,179,177,0.2)] pb-2 leading-snug"
-                    dangerouslySetInnerHTML={{ __html: renderInline(trimmed.replace('### ', '')) }}
-                  />
-                );
-              }
-
-              // Minor Heading H4
-              if (trimmed.startsWith('#### ')) {
-                return (
-                  <h4
-                    key={idx}
-                    className="font-heading font-bold text-lg text-[#062F31] mt-4 mb-0.5"
-                    dangerouslySetInnerHTML={{ __html: renderInline(trimmed.replace('#### ', '')) }}
-                  />
-                );
-              }
-
-              // Blockquote / Surgeon Callout Tip
-              if (trimmed.startsWith('> ')) {
-                return (
-                  <blockquote
-                    key={idx}
-                    className="my-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[var(--tint)] to-white border-l-4 border-[var(--aqua)] text-sm sm:text-base text-[#062F31] shadow-2xs italic flex items-start gap-3"
-                  >
-                    <span className="text-xl text-[var(--teal)] font-serif leading-none mt-0.5">❝</span>
-                    <div
-                      className="leading-relaxed flex-1"
-                      dangerouslySetInnerHTML={{
-                        __html: renderInline(trimmed.replace(/^>\s*/gm, '').trim()),
-                      }}
+                // Section Heading H2
+                if (trimmed.startsWith('## ')) {
+                  return (
+                    <h2
+                      key={idx}
+                      className="font-heading font-extrabold text-2xl sm:text-3xl text-[#062F31] mt-8 mb-2 border-l-4 border-[var(--teal)] pl-3.5 leading-snug"
+                      dangerouslySetInnerHTML={{ __html: renderInline(trimmed.replace('## ', '')) }}
                     />
-                  </blockquote>
-                );
-              }
+                  );
+                }
 
-              // Markdown Table
-              if (trimmed.startsWith('|')) {
-                const rows = trimmed.split('\n').filter((r) => !r.includes('---'));
+                // Subsection Heading H3
+                if (trimmed.startsWith('### ')) {
+                  return (
+                    <h3
+                      key={idx}
+                      className="font-heading font-extrabold text-xl sm:text-2xl text-[var(--teal)] mt-6 mb-1 border-b border-[rgba(43,179,177,0.2)] pb-2 leading-snug"
+                      dangerouslySetInnerHTML={{ __html: renderInline(trimmed.replace('### ', '')) }}
+                    />
+                  );
+                }
+
+                // Minor Heading H4
+                if (trimmed.startsWith('#### ')) {
+                  return (
+                    <h4
+                      key={idx}
+                      className="font-heading font-bold text-lg text-[#062F31] mt-4 mb-0.5"
+                      dangerouslySetInnerHTML={{ __html: renderInline(trimmed.replace('#### ', '')) }}
+                    />
+                  );
+                }
+
+                // Blockquote / Surgeon Callout Tip
+                if (trimmed.startsWith('> ')) {
+                  return (
+                    <blockquote
+                      key={idx}
+                      className="my-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[var(--tint)] to-white border-l-4 border-[var(--aqua)] text-sm sm:text-base text-[#062F31] shadow-2xs italic flex items-start gap-3"
+                    >
+                      <span className="text-xl text-[var(--teal)] font-serif leading-none mt-0.5">❝</span>
+                      <div
+                        className="leading-relaxed flex-1"
+                        dangerouslySetInnerHTML={{
+                          __html: renderInline(trimmed.replace(/^>\s*/gm, '').trim()),
+                        }}
+                      />
+                    </blockquote>
+                  );
+                }
+
+                // Markdown Table
+                if (trimmed.startsWith('|')) {
+                  const rows = trimmed.split('\n').filter((r) => !r.includes('---'));
+                  return (
+                    <div key={idx} className="overflow-x-auto my-5">
+                      <table className="w-full text-xs sm:text-sm text-left border border-[rgba(43,179,177,0.3)] rounded-2xl overflow-hidden shadow-2xs">
+                        <tbody>
+                          {rows.map((row, rIdx) => {
+                            const cells = row.split('|').filter(Boolean).map((c) => c.trim());
+                            return (
+                              <tr
+                                key={rIdx}
+                                className={
+                                  rIdx === 0
+                                    ? 'bg-[var(--tint)] font-bold text-[#062F31] border-b border-[rgba(43,179,177,0.25)]'
+                                    : 'border-t border-gray-100 hover:bg-gray-50/70 transition-colors'
+                                }
+                              >
+                                {cells.map((cell, cIdx) => (
+                                  <td
+                                    key={cIdx}
+                                    className="p-3 sm:p-3.5 leading-relaxed"
+                                    dangerouslySetInnerHTML={{ __html: renderInline(cell) }}
+                                  />
+                                ))}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+
+                // Unordered / Ordered List
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('1. ')) {
+                  const items = trimmed.split('\n');
+                  return (
+                    <ul key={idx} className="flex flex-col gap-2.5 my-3 pl-1 sm:pl-2">
+                      {items.map((it, iIdx) => (
+                        <li key={iIdx} className="flex items-start gap-3 text-sm sm:text-base leading-relaxed text-[#062F31]/90">
+                          <span className="w-2 h-2 rounded-full bg-[var(--aqua)] mt-2 shrink-0 shadow-2xs" />
+                          <span
+                            className="flex-1"
+                            dangerouslySetInnerHTML={{
+                              __html: renderInline(it.replace(/^[-*]|\d+\.\s*/, '').trim()),
+                            }}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                }
+
+                // Standard Paragraph
                 return (
-                  <div key={idx} className="overflow-x-auto my-5">
-                    <table className="w-full text-xs sm:text-sm text-left border border-[rgba(43,179,177,0.3)] rounded-2xl overflow-hidden shadow-2xs">
-                      <tbody>
-                        {rows.map((row, rIdx) => {
-                          const cells = row.split('|').filter(Boolean).map((c) => c.trim());
-                          return (
-                            <tr
-                              key={rIdx}
-                              className={
-                                rIdx === 0
-                                  ? 'bg-[var(--tint)] font-bold text-[#062F31] border-b border-[rgba(43,179,177,0.25)]'
-                                  : 'border-t border-gray-100 hover:bg-gray-50/70 transition-colors'
-                              }
-                            >
-                              {cells.map((cell, cIdx) => (
-                                <td
-                                  key={cIdx}
-                                  className="p-3 sm:p-3.5 leading-relaxed"
-                                  dangerouslySetInnerHTML={{ __html: renderInline(cell) }}
-                                />
-                              ))}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  <p
+                    key={idx}
+                    className="leading-relaxed text-[#062F31]/85 text-sm sm:text-base"
+                    dangerouslySetInnerHTML={{ __html: renderInline(trimmed) }}
+                  />
                 );
-              }
-
-              // Unordered / Ordered List
-              if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('1. ')) {
-                const items = trimmed.split('\n');
-                return (
-                  <ul key={idx} className="flex flex-col gap-2.5 my-3 pl-1 sm:pl-2">
-                    {items.map((it, iIdx) => (
-                      <li key={iIdx} className="flex items-start gap-3 text-sm sm:text-base leading-relaxed text-[#062F31]/90">
-                        <span className="w-2 h-2 rounded-full bg-[var(--aqua)] mt-2 shrink-0 shadow-2xs" />
-                        <span
-                          className="flex-1"
-                          dangerouslySetInnerHTML={{
-                            __html: renderInline(it.replace(/^[-*]|\d+\.\s*/, '').trim()),
-                          }}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                );
-              }
-
-              // Standard Paragraph
-              return (
-                <p
-                  key={idx}
-                  className="leading-relaxed text-[#062F31]/85 text-sm sm:text-base"
-                  dangerouslySetInnerHTML={{ __html: renderInline(trimmed) }}
-                />
-              );
-            })}
-          </div>
+              })}
+            </div>
+          )}
 
           {/* Medical Disclaimer Alert */}
           <div className="mt-12 p-5 rounded-2xl bg-amber-50 border border-amber-200">

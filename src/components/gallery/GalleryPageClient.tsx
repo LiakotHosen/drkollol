@@ -391,7 +391,22 @@ export function GalleryPageClient({
         {/* ---------------------------------------------------------------------------------- */}
         {activeMediaTab === 'videos' && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-            {/* 4-Columns x 2-Rows Grid (Strictly 8 items per page on desktop) */}
+            {sortedVideos.length === 0 ? (
+              <div className="text-center py-16 px-4 bg-white/70 backdrop-blur-sm rounded-3xl border border-dashed border-[var(--aqua)]/30 max-w-lg mx-auto shadow-xs">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--aqua)]/15 text-[var(--teal)] flex items-center justify-center mx-auto mb-4">
+                  <Video className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-[var(--ink)] mb-2 font-serif">
+                  {isBn ? 'কোনো ভিডিও এখনও যুক্ত করা হয়নি' : 'No Videos Published Yet'}
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--muted)] leading-relaxed">
+                  {isBn
+                    ? 'অ্যাডমিন প্যানেল থেকে ভিডিও যুক্ত করা হলে তা এখানে স্বয়ংক্রিয়ভাবে প্রদর্শিত হবে।'
+                    : 'Videos added from the admin dashboard will automatically appear here.'}
+                </p>
+              </div>
+            ) : (
+            /* 4-Columns x 2-Rows Grid (Strictly 8 items per page on desktop) */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
               {paginatedVideos.map((video) => {
                 const parsed = parseVideoUrl(video.video_url);
@@ -455,6 +470,7 @@ export function GalleryPageClient({
                 );
               })}
             </div>
+            )}
 
             {/* Pagination Controls for Videos */}
             {totalVideoPages > 1 && (
@@ -594,16 +610,29 @@ export function GalleryPageClient({
               </button>
 
               {/* Video Iframe Container */}
-              <div className="aspect-video w-full bg-black">
+              <div className="aspect-video w-full bg-black flex items-center justify-center">
                 {(() => {
                   const parsed = parseVideoUrl(activeVideoModal.video_url);
+                  if (!parsed.isValid || !parsed.embedUrl) {
+                    return (
+                      <div className="w-full h-full flex items-center justify-center text-white/70 p-6 text-center">
+                        <p className="text-sm">Video cannot be embedded or URL is invalid.</p>
+                      </div>
+                    );
+                  }
+                  const embedWithAutoplay = parsed.embedUrl.includes('?')
+                    ? `${parsed.embedUrl}&autoplay=1`
+                    : `${parsed.embedUrl}?autoplay=1`;
                   return (
                     <iframe
-                      src={parsed.embedUrl}
+                      src={embedWithAutoplay}
                       title={isBn ? activeVideoModal.title_bn : activeVideoModal.title_en}
                       className="w-full h-full border-none"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                     />
                   );
                 })()}

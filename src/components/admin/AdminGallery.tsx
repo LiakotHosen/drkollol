@@ -374,12 +374,15 @@ export function AdminGallery({
       alert('Please provide a valid YouTube or Facebook video URL.');
       return;
     }
+    const parsed = parseVideoUrl(videoForm.video_url || '');
+    if (!parsed.isValid) {
+      alert('Please provide a valid, secure YouTube (watch, shorts, embed) or Facebook video link.');
+      return;
+    }
     if (!videoForm.title_en || !videoForm.title_bn) {
       alert('Please provide titles in both English and Bangla.');
       return;
     }
-
-    const parsed = parseVideoUrl(videoForm.video_url || '');
     const finalVideo: GalleryVideo = {
       ...(videoForm as GalleryVideo),
       video_type: parsed.platform === 'facebook' ? 'facebook' : 'youtube',
@@ -618,6 +621,23 @@ export function AdminGallery({
           </div>
 
           {/* Videos Grid */}
+          {videos.length === 0 ? (
+            <div className="text-center py-12 px-4 bg-white rounded-2xl border border-dashed border-[#0B6E73]/25">
+              <Video className="w-12 h-12 text-[#0B6E73]/40 mx-auto mb-3" />
+              <h3 className="font-bold text-sm text-[#062F31]">No Videos Added Yet</h3>
+              <p className="text-xs text-[#3F6668] mt-1 max-w-sm mx-auto">
+                No videos currently exist in the database. Click &ldquo;Add Video Link&rdquo; to add YouTube or Facebook educational videos.
+              </p>
+              <button
+                type="button"
+                onClick={() => handleOpenVideoModal()}
+                className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0B6E73] text-white text-xs font-bold shadow-xs hover:bg-[#062F31] transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add First Video</span>
+              </button>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {videos.map((vid) => {
               const parsed = parseVideoUrl(vid.video_url);
@@ -719,6 +739,7 @@ export function AdminGallery({
               );
             })}
           </div>
+          )}
         </div>
       )}
 
@@ -1425,6 +1446,9 @@ export function AdminGallery({
                 className="w-full h-full border-none"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
               />
             </div>
           </div>
