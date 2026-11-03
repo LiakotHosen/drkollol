@@ -34,6 +34,7 @@ import {
   FileCode2,
 } from 'lucide-react';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+import { markdownToHtml, isHtmlString } from '@/lib/markdown-to-html';
 
 interface RichTextEditorProps {
   value: string;
@@ -67,9 +68,10 @@ export function RichTextEditor({
   useEffect(() => {
     if (visualRef.current && mode === 'visual') {
       if (!isInternalChange.current) {
-        // Only update innerHTML if it actually differs to avoid resetting cursor
-        if (visualRef.current.innerHTML !== value) {
-          visualRef.current.innerHTML = value || '';
+        // If raw markdown is provided, automatically convert to rich HTML for seamless visual editing
+        const htmlToRender = isHtmlString(value) ? (value || '') : markdownToHtml(value || '');
+        if (visualRef.current.innerHTML !== htmlToRender) {
+          visualRef.current.innerHTML = htmlToRender;
         }
       }
       isInternalChange.current = false;
@@ -540,7 +542,7 @@ export function RichTextEditor({
             onBlur={handleVisualInput}
             style={{ minHeight }}
             data-placeholder={placeholder}
-            className={`p-4 sm:p-5 outline-none overflow-y-auto text-base text-[#062F31] leading-[1.8] tracking-normal selection:bg-[#2BB3B1]/20 font-serif prose prose-teal max-w-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:font-serif [&_h1]:text-[#062F31] [&_h1]:my-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:font-serif [&_h2]:text-[#062F31] [&_h2]:border-l-4 [&_h2]:border-[#0B6E73] [&_h2]:pl-3.5 [&_h2]:my-3.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:font-serif [&_h3]:text-[#0B6E73] [&_h3]:my-3 [&_blockquote]:bg-[#EEF7F6]/60 [&_blockquote]:border-l-4 [&_blockquote]:border-[#0B6E73] [&_blockquote]:p-3.5 [&_blockquote]:rounded-r-xl [&_blockquote]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_p]:my-2.5 [&_a]:text-[#0B6E73] [&_a]:underline [&_table]:border-collapse [&_table]:w-full [&_table]:my-4 [&_th]:border [&_th]:border-gray-200 [&_th]:p-2 [&_th]:bg-gray-50 [&_td]:border [&_td]:border-gray-200 [&_td]:p-2`}
+            className={`p-4 sm:p-5 outline-none overflow-y-auto text-[16px] text-[#062F31] leading-[1.85] tracking-normal selection:bg-[#2BB3B1]/20 font-sans prose prose-teal max-w-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:font-heading [&_h1]:text-[#062F31] [&_h1]:my-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:font-heading [&_h2]:text-[#062F31] [&_h2]:border-l-4 [&_h2]:border-[#0B6E73] [&_h2]:pl-3.5 [&_h2]:my-3.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:font-heading [&_h3]:text-[#0B6E73] [&_h3]:my-3 [&_hr]:my-6 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-gradient-to-r [&_hr]:from-transparent [&_hr]:via-[#0B6E73]/30 [&_hr]:to-transparent [&_blockquote]:bg-[#EEF7F6]/60 [&_blockquote]:border-l-4 [&_blockquote]:border-[#0B6E73] [&_blockquote]:p-3.5 [&_blockquote]:rounded-r-xl [&_blockquote]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2.5 [&_p]:my-2.5 [&_a]:text-[#0B6E73] [&_a]:underline [&_table]:border-collapse [&_table]:w-full [&_table]:my-4 [&_th]:border [&_th]:border-gray-200 [&_th]:p-2 [&_th]:bg-gray-50 [&_td]:border [&_td]:border-gray-200 [&_td]:p-2`}
           />
         ) : (
           <div className="relative">

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { BlogPost, Category } from '@/types/database';
 import { RichTextEditor } from './RichTextEditor';
+import { markdownToHtml, isHtmlString } from '@/lib/markdown-to-html';
 
 interface AdminBlogsProps {
   blogs: BlogPost[];
@@ -36,7 +37,18 @@ export function AdminBlogs({ blogs, categories, onSaveBlog }: AdminBlogsProps) {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleEdit = (blog: BlogPost) => {
-    setEditingBlog({ ...blog });
+    const contentEn = isHtmlString(blog.content_en)
+      ? blog.content_en
+      : markdownToHtml(blog.content_en);
+    const contentBn = isHtmlString(blog.content_bn)
+      ? blog.content_bn
+      : markdownToHtml(blog.content_bn);
+
+    setEditingBlog({
+      ...blog,
+      content_en: contentEn,
+      content_bn: contentBn,
+    });
     setSaveSuccess(false);
   };
 
