@@ -395,23 +395,26 @@ export function ReviewsSection({ reviews, siteSettings }: ReviewsSectionProps) {
               </button>
 
               {/* Action Buttons */}
-              <div className="flex flex-row sm:flex-col lg:flex-row gap-2.5 w-full sm:w-auto justify-center">
+                            {/* Action Buttons: Responsive Stack on mobile, side-by-side on larger screens */}
+              <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto justify-center">
                 <a
-                  className="btn btn-p text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-xs text-center flex-1 sm:flex-none justify-center whitespace-nowrap"
+                  className="btn btn-p text-xs sm:text-sm px-4 sm:px-5 py-3 sm:py-2.5 rounded-xl shadow-xs text-center w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
                   href={googleReviewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {t.gSee}
+                  <ExternalLink className="w-4 h-4 shrink-0" />
+                  <span>{t.gSee}</span>
                 </a>
 
                 <a
-                  className="btn btn-g text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-xs text-center flex-1 sm:flex-none justify-center whitespace-nowrap"
+                  className="btn btn-g text-xs sm:text-sm px-4 sm:px-5 py-3 sm:py-2.5 rounded-xl shadow-xs text-center w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
                   href={googleReviewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {t.gWrite}
+                  <Star className="w-4 h-4 shrink-0 fill-amber-400 text-amber-500" />
+                  <span>{t.gWrite}</span>
                 </a>
               </div>
             </div>

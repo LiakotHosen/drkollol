@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { X, Send, Phone, RotateCcw, ExternalLink, MessageSquare } from 'lucide-react';
+import { X, Send, Phone, RotateCcw, ExternalLink, MessageSquare, ChevronLeft } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface ChatMessage {
@@ -374,6 +374,53 @@ export function ChatWidget() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // iOS Safari Virtual Keyboard & Mobile Responsive State
+  const [visualHeight, setVisualHeight] = useState<number | null>(null);
+  const [visualTop, setVisualTop] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      const mobile = typeof window !== 'undefined' && window.innerWidth < 640;
+      setIsMobile(mobile);
+      if (mobile && window.visualViewport) {
+        setVisualHeight(window.visualViewport.height);
+        setVisualTop(window.visualViewport.offsetTop);
+      } else {
+        setVisualHeight(null);
+        setVisualTop(0);
+      }
+    };
+
+    updateDimensions();
+
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (vv) {
+      vv.addEventListener('resize', updateDimensions);
+      vv.addEventListener('scroll', updateDimensions);
+    }
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      if (vv) {
+        vv.removeEventListener('resize', updateDimensions);
+        vv.removeEventListener('scroll', updateDimensions);
+      }
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, [isOpen]);
+
+  // Lock background scroll on mobile when chat is open
+  useEffect(() => {
+    if (isOpen && isMobile) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen, isMobile]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -393,12 +440,15 @@ export function ChatWidget() {
     ]);
   }, [isBn]);
 
-  // Auto-scroll on new message
+  // Auto-scroll on new message and when keyboard pops up
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 80);
+      return () => clearTimeout(timer);
     }
-  }, [messages, isOpen, isTyping]);
+  }, [messages, isOpen, isTyping, visualHeight]);
 
   // Focus input when opened and update scroll state
   useEffect(() => {
@@ -630,27 +680,50 @@ export function ChatWidget() {
           role="dialog"
           aria-modal="true"
           aria-label="Dr. Kollol Clinical Assistant Dialog"
-          className="kq-panel fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[390px] h-[580px] max-h-[88vh] bg-white rounded-3xl shadow-[0_30px_70px_-30px_rgba(6,47,49,.55)] border border-[#2BB3B1]/25 flex flex-col overflow-hidden"
+          style={
+            isMobile && visualHeight
+              ? {
+                  height: `${visualHeight}px`,
+                  top: `${visualTop}px`,
+                  bottom: 'auto',
+                }
+              : undefined
+          }
+          className="kq-panel fixed inset-0 z-50 flex flex-col bg-white overflow-hidden sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[390px] sm:h-[600px] sm:max-h-[85vh] sm:rounded-3xl sm:border sm:border-[#2BB3B1]/25 sm:shadow-[0_30px_70px_-30px_rgba(6,47,49,.55)]"
         >
           {/* Header */}
-          <div className="px-4 py-3.5 bg-[#EEF7F6] border-b border-[#2BB3B1]/25 flex items-center gap-3 shrink-0">
+          <div className="px-4 py-3 sm:py-3.5 bg-[#EEF7F6] border-b border-[#2BB3B1]/25 flex items-center gap-3 shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            {/* Mobile Back Button */}
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="sm:hidden -ml-1 p-1.5 rounded-full hover:bg-black/5 text-[#0B6E73] flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+              aria-label={isBn ? 'ফিরে যান' : 'Back to website'}
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="text-xs font-semibold">{isBn ? 'ব্যাক' : 'Back'}</span>
+            </button>
+
             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white border-2 border-white shadow-sm shrink-0">
               <Image src="/img/doctor-v3.webp" alt="Dr. Kollol" fill className="object-cover object-top" sizes="40px" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
-            <div className="min-w-0">
-              <h3 className="font-bold text-sm font-serif text-[#062F31] leading-tight">
+
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-sm font-serif text-[#062F31] leading-tight truncate">
                 {isBn ? 'ডাঃ কল্লোলের সহকারী' : "Dr. Kollol's Assistant"}
               </h3>
-              <p className="text-[11px] text-[#0B6E73] flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {isBn ? 'অনলাইন · সিরিয়াল ও তথ্য' : 'Online · Serial & information'}
+              <p className="text-[11px] text-[#0B6E73] flex items-center gap-1 mt-0.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span>{isBn ? 'অনলাইন · সিরিয়াল ও তথ্য' : 'Online · Serial & info'}</span>
               </p>
             </div>
-            <div className="ml-auto flex items-center gap-1">
+
+            <div className="ml-auto flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={handleResetChat}
-                className="w-8 h-8 rounded-full grid place-items-center bg-white text-[#0B6E73] hover:bg-[#0B6E73] hover:text-white transition-colors"
+                className="w-8 h-8 rounded-full grid place-items-center bg-white text-[#0B6E73] hover:bg-[#0B6E73] hover:text-white shadow-xs transition-colors cursor-pointer"
                 title={isBn ? 'চ্যাট রিলোড করুন' : 'Reset chat'}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -658,7 +731,7 @@ export function ChatWidget() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full grid place-items-center bg-white text-[#0B6E73] hover:bg-[#0B6E73] hover:text-white transition-colors"
+                className="w-8 h-8 rounded-full grid place-items-center bg-white text-[#0B6E73] hover:bg-[#0B6E73] hover:text-white shadow-xs transition-colors cursor-pointer"
                 title={isBn ? 'বন্ধ করুন' : 'Close assistant'}
               >
                 <X className="w-4 h-4" />
@@ -667,13 +740,13 @@ export function ChatWidget() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gradient-to-b from-white to-[#EEF7F6]/60">
+          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gradient-to-b from-white to-[#EEF7F6]/60 overscroll-contain">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                 <div
-                  className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
+                  className={`max-w-[88%] sm:max-w-[86%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-gradient-to-br from-[#2BB3B1] to-[#0B6E73] text-white rounded-br-md'
+                      ? 'bg-gradient-to-br from-[#2BB3B1] to-[#0B6E73] text-white rounded-br-md shadow-xs'
                       : 'bg-white text-[#062F31] border border-[#2BB3B1]/25 rounded-bl-md shadow-[0_8px_18px_-14px_rgba(6,47,49,.45)]'
                   }`}
                 >
@@ -717,13 +790,13 @@ export function ChatWidget() {
 
           {/* Quick questions inside the chat — shown until the conversation starts */}
           {messages.length <= 1 && !isTyping && (
-            <div className="px-3 pt-2 pb-1 bg-white flex flex-wrap gap-1.5 shrink-0 max-h-32 overflow-y-auto">
+            <div className="px-3 py-2 bg-white/95 border-t border-[#2BB3B1]/15 shrink-0 flex items-center gap-1.5 overflow-x-auto no-scrollbar sm:flex-wrap sm:max-h-32 sm:overflow-y-auto">
               {QUICK_CHIPS.map((chip) => (
                 <button
                   key={chip.id}
                   type="button"
                   onClick={() => handleChipClick(chip)}
-                  className="px-3 py-1.5 rounded-full border border-[#2BB3B1]/35 bg-[#EEF7F6] text-[#0B6E73] text-[12px] font-semibold hover:bg-[#0B6E73] hover:text-white transition-colors cursor-pointer"
+                  className="shrink-0 px-3 py-1.5 rounded-full border border-[#2BB3B1]/35 bg-[#EEF7F6] text-[#0B6E73] text-[12px] font-semibold hover:bg-[#0B6E73] hover:text-white active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                 >
                   {isBn ? chip.label_bn : chip.label_en}
                 </button>
@@ -731,16 +804,24 @@ export function ChatWidget() {
             </div>
           )}
 
-          {/* Input */}
-          <form onSubmit={handleSendMessage} className="px-3 pt-2.5 pb-2 bg-white border-t border-[#2BB3B1]/20 flex items-center gap-2 shrink-0">
+          {/* Input Bar: Note text-base on mobile prevents iOS Safari auto-zoom! */}
+          <form
+            onSubmit={handleSendMessage}
+            className="px-3 pt-2.5 pb-2 bg-white border-t border-[#2BB3B1]/20 flex items-center gap-2 shrink-0"
+          >
             <input
               ref={inputRef}
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
+              onFocus={() => {
+                setTimeout(() => {
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 200);
+              }}
               placeholder={isBn ? 'আপনার প্রশ্ন লিখুন…' : 'Type your question…'}
               maxLength={500}
-              className="flex-1 text-[13px] rounded-full border border-[#2BB3B1]/30 py-2.5 px-4 bg-white text-[#062F31] placeholder-gray-400 focus:outline-hidden focus:border-[#2BB3B1] focus:ring-2 focus:ring-[#2BB3B1]/20 transition-all"
+              className="flex-1 text-base sm:text-[13px] rounded-full border border-[#2BB3B1]/30 py-2.5 px-4 bg-white text-[#062F31] placeholder-gray-400 focus:outline-hidden focus:border-[#2BB3B1] focus:ring-2 focus:ring-[#2BB3B1]/20 transition-all shadow-inner"
             />
             <button
               type="submit"
@@ -755,8 +836,8 @@ export function ChatWidget() {
               <Send className="w-4 h-4" />
             </button>
           </form>
-          <p className="pb-2.5 text-center text-[10.5px] text-[#3F6668] bg-white shrink-0">
-            {isBn ? '⚠️ এটা তথ্যমূলক এআই সহকারী — সঠিক চিকিৎসার জন্য ডাক্তার দেখান।' : '⚠️ Informational AI assistant — please consult the doctor for treatment.'}
+          <p className="pb-[max(0.6rem,env(safe-area-inset-bottom))] text-center text-[10px] sm:text-[10.5px] text-[#3F6668] bg-white shrink-0 px-2 truncate">
+            {isBn ? '⚠️ তথ্যমূলক এআই সহকারী — সঠিক চিকিৎসার জন্য ডাক্তার দেখান।' : '⚠️ Informational AI assistant — please consult the doctor for treatment.'}
           </p>
         </div>
       )}
