@@ -28,8 +28,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
       call: 'Emergency Call',
       wa: 'WhatsApp Doctor',
       dir: 'Directions on Google Maps →',
-      mapH: 'Find the consultation chamber',
-      mapS: 'Tap any chamber above to view live map location & GPS directions.',
       ch: [
         {
           t: 'Sherpur Chamber 1 · Thursday',
@@ -37,7 +35,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
           a: 'Zila Hospital Road, Narayanpur, Sherpur · 4:00 PM – 9:00 PM',
           q: 'Health Care Pvt Hospital, Hospital Road, Sherpur',
           link: 'https://www.google.com/maps/search/?api=1&query=Health+Care+Pvt+Hospital%2C+Hospital+Road%2C+Sherpur&query_place_id=ChIJO6EZbULXVzcRKDpZy_ERMTI',
-          embed: 'https://maps.google.com/maps?q=Health%20Care%20Pvt%20Hospital%2C%20Hospital%20Road%2C%20Sherpur&z=16&output=embed',
         },
         {
           t: 'Sherpur Chamber 2 · Friday',
@@ -45,7 +42,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
           a: 'Zila Hospital Road, Narayanpur, Sherpur · 11:00 AM – 9:00 PM',
           q: '25.01915,90.02275',
           link: 'https://www.google.com/maps?q=25.01915%2C90.02275',
-          embed: 'https://maps.google.com/maps?q=25.01915%2C90.02275&z=16&output=embed',
         },
         {
           t: 'Mymensingh · Saturday to Tuesday',
@@ -53,7 +49,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
           a: '208 Charpara (opp. Hospital Gate 1, 5th floor) · 3:30 PM – 8:00 PM',
           q: 'New Medicare Pathology Lab, Charpara, Mymensingh',
           link: 'https://www.google.com/maps/search/?api=1&query=New+Medicare+Pathology+Lab%2C+Charpara%2C+Mymensingh&query_place_id=ChIJEZk4RglPVjcR9KoUp46judc',
-          embed: 'https://maps.google.com/maps?q=New%20Medicare%20Pathology%20Lab%2C%20Charpara%2C%20Mymensingh&z=16&output=embed',
         },
       ],
     },
@@ -65,8 +60,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
       call: 'জরুরি কল',
       wa: 'WhatsApp ডক্টর',
       dir: 'গুগল ম্যাপে দিকনির্দেশনা →',
-      mapH: 'চেম্বার খুঁজে নিন',
-      mapS: 'ম্যাপে দেখতে যেকোনো চেম্বারে চাপ দিন।',
       ch: [
         {
           t: 'শেরপুর চেম্বার ১ · বৃহস্পতিবার',
@@ -74,7 +67,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
           a: 'জেলা হাসপাতাল রোড, নারায়ণপুর, শেরপুর · বিকাল ৪.০০টা – রাত ৯.০০টা',
           q: 'Health Care Pvt Hospital, Hospital Road, Sherpur',
           link: 'https://www.google.com/maps/search/?api=1&query=Health+Care+Pvt+Hospital%2C+Hospital+Road%2C+Sherpur&query_place_id=ChIJO6EZbULXVzcRKDpZy_ERMTI',
-          embed: 'https://maps.google.com/maps?q=Health%20Care%20Pvt%20Hospital%2C%20Hospital%20Road%2C%20Sherpur&z=16&output=embed',
         },
         {
           t: 'শেরপুর চেম্বার ২ · শুক্রবার',
@@ -82,7 +74,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
           a: 'জেলা হাসপাতাল রোড, নারায়ণপুর, শেরপুর · সকাল ১১.০০টা – রাত ৯.০০টা',
           q: '25.01915,90.02275',
           link: 'https://www.google.com/maps?q=25.01915%2C90.02275',
-          embed: 'https://maps.google.com/maps?q=25.01915%2C90.02275&z=16&output=embed',
         },
         {
           t: 'ময়মনসিংহ · শনি থেকে মঙ্গলবার',
@@ -90,19 +81,15 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
           a: '২০৮ চরপাড়া (১নং হাসপাতাল গেইটের বিপরীতে ৫ম তলা) · বিকাল ৩.৩০টা – রাত ৮.০০টা',
           q: 'New Medicare Pathology Lab, Charpara, Mymensingh',
           link: 'https://www.google.com/maps/search/?api=1&query=New+Medicare+Pathology+Lab%2C+Charpara%2C+Mymensingh&query_place_id=ChIJEZk4RglPVjcR9KoUp46judc',
-          embed: 'https://maps.google.com/maps?q=New%20Medicare%20Pathology%20Lab%2C%20Charpara%2C%20Mymensingh&z=16&output=embed',
         },
       ],
     },
   }[lang];
 
-  const currentCh = t.ch[selectedChamberIdx] || t.ch[0];
-
   const handleChamberClick = (idx: number) => {
-    if (selectedChamberIdx === idx) {
-      window.open(t.ch[idx].link, '_blank', 'noopener');
-    } else {
-      setSelectedChamberIdx(idx);
+    setSelectedChamberIdx(idx);
+    if (t.ch[idx]?.link) {
+      window.open(t.ch[idx].link, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -160,23 +147,6 @@ export function VisitChambersSection({ settings, chambers, onBookClick }: VisitC
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="v-map" id="vMap">
-        <div className="mh">
-          <div>
-            <b>{t.mapH}</b>
-            <span>{t.mapS}</span>
-          </div>
-        </div>
-        <iframe
-          id="mapFrame"
-          title="Chamber Map"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          allowFullScreen
-          src={currentCh.embed}
-        />
       </div>
     </section>
   );

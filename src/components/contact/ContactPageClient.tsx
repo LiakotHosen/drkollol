@@ -632,6 +632,7 @@ export function ContactPageClient({
         settings={settings}
         categories={categories}
         chambers={chambers}
+        onBookClick={() => setModalOpen(true)}
       />
 
       <MobileStickyBar

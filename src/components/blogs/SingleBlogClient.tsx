@@ -195,7 +195,7 @@ export function SingleBlogClient({
                 onClick={() => setModalOpen(true)}
                 className="btn btn-p text-xs sm:text-sm py-3 px-6 shadow-md"
               >
-                {t.bookBtn}: {formatDigits(settings.phone_serial, isBn)}
+                {t.bookBtn}
               </button>
               <a
                 href={settings.whatsapp_url}
@@ -244,6 +244,7 @@ export function SingleBlogClient({
         settings={settings}
         categories={categories}
         chambers={chambers}
+        onBookClick={() => setModalOpen(true)}
       />
 
       <MobileStickyBar

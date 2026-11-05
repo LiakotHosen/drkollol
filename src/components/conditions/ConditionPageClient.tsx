@@ -343,7 +343,7 @@ export function ConditionPageClient({
                 onClick={() => setModalOpen(true)}
                 className="btn btn-p"
               >
-                {t.book}: {formatDigits(settings.phone_serial, isBn)}
+                {t.book}
               </button>
               <a className="btn btn-g" href={`tel:${settings.phone_call}`}>
                 {t.call}
@@ -426,6 +426,7 @@ export function ConditionPageClient({
         settings={settings}
         categories={categories}
         chambers={chambers}
+        onBookClick={() => setModalOpen(true)}
       />
 
       <MobileStickyBar

@@ -63,7 +63,7 @@ export function SerialStepsSection({ steps, profile, onBookClick }: SerialStepsS
           t: 'Call or WhatsApp to confirm',
           p: 'Tell us your name, your problem and your chamber — you’ll get your serial number.',
           b: [
-            { k: 'p', text: 'Call', href: `tel:${SERIAL_NO}` },
+            { k: 'p', text: 'Book a serial', href: `tel:${SERIAL_NO}`, isBook: true },
             { k: 'g', text: 'WhatsApp', href: WA_URL, target: '_blank' },
           ],
         },
@@ -86,7 +86,7 @@ export function SerialStepsSection({ steps, profile, onBookClick }: SerialStepsS
           t: 'কল বা WhatsApp-এ নিশ্চিত করুন',
           p: 'আপনার নাম, সমস্যা আর কোন চেম্বারে দেখাবেন জানান — সিরিয়াল নম্বর জানিয়ে দেওয়া হবে।',
           b: [
-            { k: 'p', text: 'কল করুন', href: `tel:${SERIAL_NO}` },
+            { k: 'p', text: 'সিরিয়াল নিন', href: `tel:${SERIAL_NO}`, isBook: true },
             { k: 'g', text: 'WhatsApp', href: WA_URL, target: '_blank' },
           ],
         },

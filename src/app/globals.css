@@ -1972,13 +1972,12 @@ canvas#cv {
   .revs {
     display: flex;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
     gap: 12px;
     padding-bottom: 8px;
     scrollbar-width: none;
   }
   .revs::-webkit-scrollbar { display: none; }
-  .rev { flex: 0 0 84%; scroll-snap-align: center; }
+  .rev { flex: 0 0 84%; }
   .vid { grid-template-columns: 1fr; }
   .vid .stack { grid-template-columns: repeat(3, 1fr); grid-template-rows: none; }
   .vid .stack .ph { aspect-ratio: 16/10; }
@@ -3298,3 +3297,9 @@ canvas#cv {
   .cue-ring__tx b { font-size: 14px; } .cue-ring__tx small { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .cue-ring__dial i { animation: none; } }
+
+
+/* Safety rule to ensure review cards never snap or freeze on iOS */
+.review-card-item {
+  scroll-snap-align: none !important;
+}

@@ -190,6 +190,7 @@ export function BlogsHubClient({
         settings={settings}
         categories={categories}
         chambers={chambers}
+        onBookClick={() => setModalOpen(true)}
       />
 
       <MobileStickyBar

@@ -278,17 +278,32 @@ export function Navbar({ categories, serialPhone = '01750529252', onBookClick }:
         >
           {navLinks.contact}
         </Link>
-        <a
-          href="tel:01670879100"
-          className="btn btn-p"
-          style={{ marginTop: '8px' }}
-          onClick={() => {
-            setMobileMenuOpen(false);
-            setMobileServicesOpen(false);
-          }}
-        >
-          {navLinks.call}
-        </a>
+        {onBookClick ? (
+          <button
+            type="button"
+            className="btn btn-p cursor-pointer"
+            style={{ marginTop: '8px' }}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setMobileServicesOpen(false);
+              onBookClick();
+            }}
+          >
+            {navLinks.book}
+          </button>
+        ) : (
+          <a
+            href={`tel:${serialPhone}`}
+            className="btn btn-p"
+            style={{ marginTop: '8px' }}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setMobileServicesOpen(false);
+            }}
+          >
+            {navLinks.book}
+          </a>
+        )}
       </div>
     </>
   );

@@ -14,7 +14,6 @@ import {
   X,
   Copy,
   Check,
-  CheckCircle2,
   Quote,
   Sparkles,
 } from 'lucide-react';
@@ -41,11 +40,15 @@ export function ReviewsSection({ reviews, siteSettings }: ReviewsSectionProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Dragging state
+  // Dragging & Interaction Refs
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
-  const startXRef = useRef(0);
-  const scrollLeftRef = useRef(0);
+  const isInteractingRef = useRef(false);
+  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isVisibleRef = useRef(true);
+  const isMouseDownRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragScrollLeftRef = useRef(0);
+  const initializedPosRef = useRef(false);
 
   // Generate QR Code data URL
   useEffect(() => {
@@ -61,72 +64,170 @@ export function ReviewsSection({ reviews, siteSettings }: ReviewsSectionProps) {
       .catch((err) => console.error('Failed to generate Google Review QR Code:', err));
   }, [googleReviewUrl]);
 
-  // Smooth auto-scroll loop
+  // Triple the list to create a seamless infinite 3-zone buffer (Left buffer, Active middle, Right buffer)
+  const displayReviews = React.useMemo(() => {
+    if (!reviews || reviews.length === 0) return [];
+    return [
+      ...reviews.map((r, i) => ({ ...r, _uKey: `s0-${r.id}-${i}` })),
+      ...reviews.map((r, i) => ({ ...r, _uKey: `s1-${r.id}-${i}` })),
+      ...reviews.map((r, i) => ({ ...r, _uKey: `s2-${r.id}-${i}` })),
+    ];
+  }, [reviews]);
+
+  // Helper to measure card step (card width + 20px gap)
+  const getCardStep = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return 360;
+    const firstCard = el.querySelector<HTMLElement>('[data-review-card]');
+    if (!firstCard) return 360;
+    return firstCard.offsetWidth + 20;
+  }, []);
+
+  // Position at the start of the middle set on initial mount
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
+    if (!el || reviews.length === 0 || initializedPosRef.current) return;
+
+    const timer = setTimeout(() => {
+      const step = getCardStep();
+      const singleSetWidth = reviews.length * step;
+      el.scrollLeft = singleSetWidth;
+      initializedPosRef.current = true;
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [reviews.length, getCardStep]);
+
+  // IntersectionObserver: only run animations when section is in viewport
+  useEffect(() => {
+    const section = document.getElementById('reviews');
+    if (!section || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isVisibleRef.current = entry.isIntersecting;
+        });
+      },
+      { threshold: 0.05 }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  // Seamless wrap handler for manual scrolling
+  const handleScrollWrap = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || reviews.length === 0) return;
+
+    const step = getCardStep();
+    const singleSetWidth = reviews.length * step;
+
+    // If scrolled past the 2nd set, wrap back by 1 set
+    if (el.scrollLeft >= singleSetWidth * 2) {
+      el.scrollLeft -= singleSetWidth;
+    }
+    // If scrolled before the 1st set (e.g. left swipes), wrap forward by 1 set
+    else if (el.scrollLeft <= singleSetWidth * 0.1) {
+      el.scrollLeft += singleSetWidth;
+    }
+  }, [reviews.length, getCardStep]);
+
+  // Smooth continuous auto-scroll loop (Delta-time based for smooth 60fps/120fps across all screens)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || reviews.length === 0) return;
 
     let animId: number;
-    const speed = 0.75; // pixels per frame
+    let lastTime = performance.now();
+    const speedPerSec = 38; // 38px per second: smooth, comfortable reading pace
 
-    const step = () => {
-      if (!isPaused && !isHovered && !isDraggingRef.current && el) {
-        el.scrollLeft += speed;
-        // Loop back when reaching half of duplicated content
-        if (el.scrollLeft >= el.scrollWidth / 2) {
-          el.scrollLeft = 0;
+    const tick = (now: number) => {
+      const delta = (now - lastTime) / 1000;
+      lastTime = now;
+      const clampedDelta = Math.min(delta, 0.1);
+
+      if (
+        !isPaused &&
+        !isHovered &&
+        !isInteractingRef.current &&
+        isVisibleRef.current &&
+        el
+      ) {
+        el.scrollLeft += clampedDelta * speedPerSec;
+
+        const step = getCardStep();
+        const singleSetWidth = reviews.length * step;
+        if (el.scrollLeft >= singleSetWidth * 2) {
+          el.scrollLeft -= singleSetWidth;
         }
       }
-      animId = requestAnimationFrame(step);
+
+      animId = requestAnimationFrame(tick);
     };
 
-    animId = requestAnimationFrame(step);
+    animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
-  }, [isPaused, isHovered]);
+  }, [isPaused, isHovered, reviews.length, getCardStep]);
 
-  // Manual scroll buttons
+  // Manual scroll buttons: pause continuous auto-scroll and smoothly advance
   const handleScroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    const cardWidth = 360;
-    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+
+    // Pause auto-scroll during and after button click
+    isInteractingRef.current = true;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      isInteractingRef.current = false;
+    }, 3000);
+
+    const step = getCardStep();
+    const scrollAmount = direction === 'left' ? -step : step;
     el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
-  // Touch and mouse drag handlers for seamless mobile & desktop swiping
-  const handleTouchStart = (e: React.TouchEvent) => {
-    isDraggingRef.current = true;
-    startXRef.current = e.touches[0].pageX - (scrollRef.current?.offsetLeft || 0);
-    scrollLeftRef.current = scrollRef.current?.scrollLeft || 0;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDraggingRef.current || !scrollRef.current) return;
-    const x = e.touches[0].pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startXRef.current) * 1.5;
-    scrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+  // Mobile Touch handlers: pause auto-scroll during touch, let native iOS/Android momentum scrolling handle swiping
+  const handleTouchStart = () => {
+    isInteractingRef.current = true;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
   };
 
   const handleTouchEnd = () => {
-    isDraggingRef.current = false;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      isInteractingRef.current = false;
+    }, 2500);
   };
 
+  // Desktop Mouse Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    isDraggingRef.current = true;
-    startXRef.current = e.pageX - (scrollRef.current?.offsetLeft || 0);
-    scrollLeftRef.current = scrollRef.current?.scrollLeft || 0;
+    const el = scrollRef.current;
+    if (!el) return;
+    isMouseDownRef.current = true;
+    isInteractingRef.current = true;
+    dragStartXRef.current = e.pageX - el.offsetLeft;
+    dragScrollLeftRef.current = el.scrollLeft;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current || !scrollRef.current) return;
+    if (!isMouseDownRef.current || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startXRef.current) * 1.5;
-    scrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+    const walk = (x - dragStartXRef.current) * 1.3;
+    scrollRef.current.scrollLeft = dragScrollLeftRef.current - walk;
   };
 
-  const handleMouseUp = () => {
-    isDraggingRef.current = false;
+  const handleMouseUpOrLeave = () => {
+    if (isMouseDownRef.current) {
+      isMouseDownRef.current = false;
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = setTimeout(() => {
+        isInteractingRef.current = false;
+      }, 2000);
+    }
   };
 
   const handleCopyLink = () => {
@@ -192,9 +293,6 @@ export function ReviewsSection({ reviews, siteSettings }: ReviewsSectionProps) {
     },
   }[lang];
 
-  // Double list to create seamless infinite scroll loop
-  const displayReviews = [...reviews, ...reviews];
-
   return (
     <section className="hx relative overflow-hidden py-16" id="reviews">
       <div className="wrap">
@@ -205,7 +303,7 @@ export function ReviewsSection({ reviews, siteSettings }: ReviewsSectionProps) {
         {/* Google Reviews Glass Box - WIDE & ELEGANT */}
         <div className="gbox glass relative overflow-hidden shadow-xl border border-[#0B6E73]/20 bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-7 md:p-8 max-w-5xl w-full mx-auto mt-8 transition-all hover:border-[#2BB3B1]/40">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6 w-full">
-            {/* Left: Google Badge & Rating Info (Strictly 2 clean lines) */}
+            {/* Left: Google Badge & Rating Info */}
             <div className="flex items-center gap-4 sm:gap-5 text-center sm:text-left min-w-0">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-[#2BB3B1]/30 flex items-center justify-center shadow-sm shrink-0">
                 <svg className="w-8 h-8 sm:w-9 sm:h-9" viewBox="0 0 24 24">
@@ -330,24 +428,28 @@ export function ReviewsSection({ reviews, siteSettings }: ReviewsSectionProps) {
         {/* Scrollable Track */}
         <div
           ref={scrollRef}
+          onScroll={handleScrollWrap}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => {
             setIsHovered(false);
-            handleMouseUp();
+            handleMouseUpOrLeave();
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
+          onMouseUp={handleMouseUpOrLeave}
           onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex gap-5 overflow-x-auto no-scrollbar scroll-smooth cursor-grab active:cursor-grabbing px-4 sm:px-12 select-none py-4"
+          onTouchCancel={handleTouchEnd}
+          className="flex gap-5 overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing px-4 sm:px-12 select-none py-4"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x pan-y',
+            overscrollBehaviorX: 'contain',
           }}
         >
-          {displayReviews.map((r, index) => {
+          {displayReviews.map((r) => {
             const quote = isBn ? r.quote_bn : r.quote_en;
             const author = isBn ? r.author_name_bn : r.author_name_en;
             const meta = isBn ? r.author_meta_bn : r.author_meta_en;
@@ -356,8 +458,9 @@ export function ReviewsSection({ reviews, siteSettings }: ReviewsSectionProps) {
 
             return (
               <div
-                key={`${r.id}-${index}`}
-                className="rev glass w-[310px] sm:w-[360px] md:w-[380px] shrink-0 rounded-3xl p-6 sm:p-7 border border-[#0B6E73]/15 hover:border-[#2BB3B1] bg-white/90 backdrop-blur-md shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
+                key={r._uKey}
+                data-review-card
+                className="review-card-item glass w-[300px] sm:w-[350px] md:w-[380px] shrink-0 rounded-3xl p-6 sm:p-7 border border-[#0B6E73]/15 hover:border-[#2BB3B1] bg-white/90 backdrop-blur-md shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
                   {/* Card Header: Stars & Google Badge */}

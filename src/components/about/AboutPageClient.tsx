@@ -98,8 +98,6 @@ export function AboutPageClient({
       vH: 'Meet Dr. Kollol for Consultation',
       vP: 'Call for a serial or come to the chamber — Dr. Kollol will examine your condition and recommend the safest surgical treatment.',
       dir: 'Directions →',
-      mapH: 'Chamber Locations',
-      mapS: 'Tap a chamber to see it on the map.',
       ch: [
         {
           t: 'Sherpur Chamber 1 · Thursday',
@@ -190,8 +188,6 @@ export function AboutPageClient({
       vH: 'সরাসরি পরামর্শের জন্য চেম্বারে আসুন',
       vP: 'সিরিয়ালের জন্য কল করুন বা চেম্বারে আসুন — ডাঃ কল্লোল যত্ন নিয়ে আপনার সমস্যা পরীক্ষা করে সঠিক সমাধান জানাবেন।',
       dir: 'দিকনির্দেশনা →',
-      mapH: 'চেম্বার খুঁজে নিন',
-      mapS: 'ম্যাপে দেখতে যেকোনো চেম্বারে চাপ দিন।',
       ch: [
         {
           t: 'শেরপুর চেম্বার ১ · প্রতি বৃহস্পতিবার',
@@ -218,7 +214,12 @@ export function AboutPageClient({
     },
   }[lang];
 
-  const currentCh = t.ch[selectedChamberIdx] || t.ch[0];
+  const handleChamberClick = (idx: number) => {
+    setSelectedChamberIdx(idx);
+    if (t.ch[idx]?.link) {
+      window.open(t.ch[idx].link, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="relative min-h-screen bg-[#F6F6F6]">
@@ -440,8 +441,8 @@ export function AboutPageClient({
               <button
                 key={idx}
                 type="button"
-                onClick={() => setSelectedChamberIdx(idx)}
-                className={`v-ch glass ${selectedChamberIdx === idx ? 'on' : ''}`}
+                onClick={() => handleChamberClick(idx)}
+                className={`v-ch glass ${selectedChamberIdx === idx ? 'on' : ''} cursor-pointer text-left`}
               >
                 <small>{x.t}</small>
                 <b>{x.n}</b>
@@ -452,28 +453,13 @@ export function AboutPageClient({
           </div>
         </div>
 
-        <div className="v-map" id="vMap">
-          <div className="mh">
-            <div>
-              <b>{t.mapH}</b>
-              <span>{t.mapS}</span>
-            </div>
-          </div>
-          <iframe
-            id="mapFrame"
-            title="Chamber Map"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-            src={`https://maps.google.com/maps?q=${encodeURIComponent(currentCh.q)}&z=16&output=embed`}
-          />
-        </div>
       </section>
 
       <Footer
         settings={settings}
         categories={categories}
         chambers={chambers}
+        onBookClick={() => setModalOpen(true)}
       />
 
       {/* Appointment Modal */}

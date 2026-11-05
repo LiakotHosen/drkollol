@@ -40,14 +40,14 @@ export function MobileStickyBar({
           onClick={onBookClick}
           className="btn btn-p flex-1 py-2.5 px-2 text-xs font-bold text-center justify-center"
         >
-          {isBn ? 'সিরিয়াল নিন' : 'Serial'}
+          {isBn ? 'সিরিয়াল নিন' : 'Book a serial'}
         </button>
       ) : (
         <a
           href={`tel:${phoneSerial}`}
           className="btn btn-p flex-1 py-2.5 px-2 text-xs font-bold text-center justify-center"
         >
-          {isBn ? 'সিরিয়াল নিন' : 'Serial'}
+          {isBn ? 'সিরিয়াল নিন' : 'Book a serial'}
         </a>
       )}
     </div>

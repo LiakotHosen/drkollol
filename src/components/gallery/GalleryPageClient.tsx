@@ -698,7 +698,7 @@ export function GalleryPageClient({
       </main>
 
       {/* Footer */}
-      <Footer settings={settings} categories={categories} chambers={chambers} />
+      <Footer settings={settings} categories={categories} chambers={chambers} onBookClick={() => setAppointmentModalOpen(true)} />
 
       {/* Appointment Modal */}
       {appointmentModalOpen && (

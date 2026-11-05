@@ -11,9 +11,10 @@ interface FooterProps {
   settings: SiteSettings;
   categories?: Category[];
   chambers: Chamber[];
+  onBookClick?: () => void;
 }
 
-export function Footer({ settings, categories, chambers }: FooterProps) {
+export function Footer({ settings, categories, chambers, onBookClick }: FooterProps) {
   const { lang, isBn } = useLanguage();
 
   const content = {
@@ -109,12 +110,22 @@ export function Footer({ settings, categories, chambers }: FooterProps) {
             </p>
 
             <div className="flex flex-wrap gap-2 pt-2">
-              <a
-                href={`tel:${settings.phone_serial}`}
-                className="btn btn-p text-xs py-2 px-4 shadow-sm"
-              >
-                {content.serial}: {formatDigits(settings.phone_serial, isBn)}
-              </a>
+              {onBookClick ? (
+                <button
+                  type="button"
+                  onClick={onBookClick}
+                  className="btn btn-p text-xs py-2 px-4 shadow-sm cursor-pointer"
+                >
+                  {isBn ? 'সিরিয়াল নিন' : 'Book a serial'}
+                </button>
+              ) : (
+                <a
+                  href={`tel:${settings.phone_serial}`}
+                  className="btn btn-p text-xs py-2 px-4 shadow-sm"
+                >
+                  {isBn ? 'সিরিয়াল নিন' : 'Book a serial'}
+                </a>
+              )}
               <a
                 href={settings.whatsapp_url}
                 target="_blank"

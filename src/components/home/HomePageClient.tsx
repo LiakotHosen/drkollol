@@ -116,6 +116,7 @@ export function HomePageClient({
         settings={siteSettings}
         categories={categories}
         chambers={chambers}
+        onBookClick={() => setModalOpen(true)}
       />
 
       {/* Mobile Bottom Sticky Bar */}
