@@ -405,3 +405,9 @@ Order: hero → Meet Your Surgeon/conditions (pinned stage) → **How to get a s
 - iOS Safari / Android Chrome toolbar show/hide changes `window.innerHeight` and fires `resize`, while pinned stages use CSS `100svh`, so scroll-driven animations jumped on phones.
 - Added `src/lib/viewport.ts`: `stableVH()` (100svh in px, re-measured only on width change) and `isToolbarOnlyResize()`.
 - Replaced `window.innerHeight` with `stableVH()` in HeroIncision, DoctorConditionsStage, SerialStepsSection, PinnedShowcase, CategoryPageClient, ConditionPageClient; resize handlers ignore toolbar-only resizes on touch devices.
+
+
+## 2026-11-10 — Deployment synchronization by LiakotHosen
+- Synchronized codebase across both Dr. Kollol's repository (`kollol44/drkollolweb`) and developer Liakot Hosen's repository (`LiakotHosen/drkollol`).
+- Verified all recent features and fixes (responsive reviews, iOS Safari chatbot viewport, appointment modal WhatsApp integration, CMS rich text editor).
+- Triggered automated Vercel production deployment for `drkollol.com`.
